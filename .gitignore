@@ -9,3 +9,5 @@ series/*/ep_*/audio/
 series/*/ep_*/*.mp4
 demo/audio/
 demo/*.mp4
+demo/clips/
+series/*/ep_*/clips/

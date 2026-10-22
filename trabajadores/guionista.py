@@ -48,6 +48,7 @@ El primer plano debe enganchar en 2 segundos. El último plano es el cliffhanger
 Para cada plano:
 - "prompt_imagen": en INGLÉS, descripción completa de la ilustración vertical (acción, encuadre, luz, emoción). Nombra a los personajes que salen.
 - "personajes": lista de nombres de los que aparecen (de {nombres}).
+- "movimiento": en INGLÉS, qué se MUEVE en el plano para animarlo (una acción simple y clara de 4 segundos: "she slowly turns her head toward the camera and gasps, rain falling, hair moving in the wind"). Evita acciones complejas o con muchas personas.
 - "camara": una de [{CAMARAS}]. "foco": [x, y] de 0 a 1, punto de interés de la imagen.
 - "efecto": una de [{EFECTOS}] (úsalos poco, solo en momentos clave).
 - "boca": nombre del personaje SOLO si el plano es un primer plano frontal suyo y él/ella habla en este plano; si no, null.

@@ -4,7 +4,7 @@
   python producir.py episodio <id> <numero>          → series/<id>/ep_XX/episodio.mp4 + publicacion.json
 """
 import json, os, re, sys, time
-from trabajadores import guionista, ilustrador, voces, montador
+from trabajadores import guionista, ilustrador, voces, montador, animador
 
 RAIZ = os.path.join(os.path.dirname(__file__), "series")
 
@@ -47,6 +47,8 @@ def episodio(sid, numero):
     fichas = ilustrador.fichas(biblia, carpeta_serie)
     n = ilustrador.planos(biblia, guion, carpeta, fichas)
     print(f"imágenes nuevas: {n}")
+    clips = animador.animar(carpeta, guion)
+    print(f"clips animados: {clips}")
     dur = voces.generar_lineas(guion, guion["reparto"], carpeta)
     colores = {k: tuple(v) for k, v in guion.get("colores", {}).items()}
     final, total = montador.montar(carpeta, guion, dur, colores=colores)

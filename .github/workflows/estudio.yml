@@ -27,9 +27,11 @@ concurrency:
 jobs:
   producir:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 340
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +65,7 @@ jobs:
             nueva-serie) python cerebro.py nueva-serie "${{ inputs.idea }}" ;;
             aprobar)     python cerebro.py aprobar "${{ inputs.serie }}" ;;
             rechazar)    python cerebro.py rechazar "${{ inputs.serie }}" ;;
-            demo)        python montar_episodio.py demo
+            demo)        python montar_episodio.py demo --animar
                          echo "video=demo/episodio.mp4" >> "$GITHUB_OUTPUT"
                          echo "nombre=demo" >> "$GITHUB_OUTPUT" ;;
           esac

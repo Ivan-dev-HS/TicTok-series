@@ -44,7 +44,8 @@
           "quien": "narrador",
           "texto": "En Kagehara, nunca deja de llover."
         }
-      ]
+      ],
+      "movimiento": "the girl in the green raincoat walks slowly forward along the wet street holding a glowing lantern, heavy rain falling, lantern light flickering, puddles rippling"
     },
     {
       "id": 2,
@@ -64,7 +65,8 @@
           "quien": "Aoi",
           "texto": "¿Por qué siempre tengo que pasar por este callejón?"
         }
-      ]
+      ],
+      "movimiento": "the girl looks up at the camera and blinks, tired expression, raindrops running down her face, hood moving slightly, lantern flame flickering"
     },
     {
       "id": 3,
@@ -81,7 +83,8 @@
           "quien": "narrador",
           "texto": "Pero esta noche... la llama se volvió azul."
         }
-      ]
+      ],
+      "movimiento": "the lantern flame flares and turns bright blue, magical sparks swirl around her hand, rain drops sparkle in the blue light"
     },
     {
       "id": 4,
@@ -97,7 +100,8 @@
           "quien": "narrador",
           "texto": "No estaba sola. Algo la había seguido."
         }
-      ]
+      ],
+      "movimiento": "a giant translucent spirit fox made of blue mist rises behind the girl, its nine tails slowly flowing and swirling, glowing eyes, rain falling"
     },
     {
       "id": 5,
@@ -113,7 +117,8 @@
           "quien": "narrador",
           "texto": "Y ahora... ella también lo ve."
         }
-      ]
+      ],
+      "movimiento": "the girl's eyes widen in shock, pupils trembling, reflection of the blue fox glowing in her eyes, raindrops running down her face"
     }
   ]
 }

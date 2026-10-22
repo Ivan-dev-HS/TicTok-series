@@ -94,6 +94,47 @@ def render_25d(f: Fuente, zoom, cx, cy, parx, pary, dolly, respiro, temblor=(0, 
     return cv2.remap(f.img, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
 
 
+class Clip:
+    """Clip animado de Kaggle para un plano. Se adapta a la duración del plano sin saltos."""
+    def __init__(self, ruta):
+        info = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,r_frame_rate",
+                               "-of", "csv=p=0", ruta], capture_output=True, text=True).stdout.strip().split(",")
+        w, h = int(info[0]), int(info[1]); num, den = info[2].split("/"); self.fps = int(num) / int(den)
+        raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", ruta, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout
+        self.frames = np.frombuffer(raw, np.uint8).reshape(-1, h, w, 3)
+        self.dur = len(self.frames) / self.fps
+
+    def frame(self, t_local, dur_plano):
+        # velocidad ajustada (0.75x–1.15x); si el plano es más largo, va y vuelve (ping-pong) suavemente
+        vel = min(max(self.dur / dur_plano, 0.75), 1.15)
+        tc = t_local * vel
+        ciclo = 2 * self.dur
+        tc = tc % ciclo
+        if tc > self.dur:
+            tc = ciclo - tc
+        pos = min(max(tc * self.fps, 0), len(self.frames) - 1.001)
+        i = int(pos); a = pos - i
+        f = self.frames[i].astype(np.float32) * (1 - a) + self.frames[min(i + 1, len(self.frames) - 1)].astype(np.float32) * a
+        # zoom muy lento para que siempre haya vida, y reescalado a 1080x1920 con nitidez
+        z = 1.0 + 0.05 * min(t_local / max(dur_plano, 1), 1)
+        h, w = f.shape[:2]
+        ch = min(h, w * H / W) / z; cw = ch * W / H
+        x0, y0 = (w - cw) / 2, (h - ch) / 2
+        M = np.float32([[W / cw, 0, -x0 * W / cw], [0, H / ch, -y0 * H / ch]])
+        out = cv2.warpAffine(f, M, (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
+        blur = cv2.GaussianBlur(out, (0, 0), 1.2)
+        return np.clip(out * 1.35 - blur * 0.35, 0, 255)
+
+
+def cargar_clips(carpeta, planos):
+    clips = {}
+    for p in planos:
+        ruta = os.path.join(carpeta, "clips", f"plano_{p['id']:02d}.mp4")
+        if os.path.exists(ruta) and os.path.getsize(ruta) > 10000:
+            clips[p["id"]] = ruta
+    return clips
+
+
 def cargar_imagenes(carpeta, planos):
     fuentes = {}
     for p in planos:
@@ -293,7 +334,7 @@ def mezclar_audio(carpeta, guion, planos, total, salida):
 def montar(carpeta, guion, duraciones, salida="episodio.mp4", colores=None):
     random.seed(7); np.random.seed(7)
     planos, total = linea_de_tiempo(guion, duraciones)
-    fuentes = cargar_imagenes(carpeta, planos)
+    fuentes = cargar_imagenes(carpeta, planos)  # también sirven de respaldo si un clip falla
     bocas = niveles_boca(carpeta, planos)
     bloques = bloques_subtitulos(carpeta, planos)
     colores = colores or {}
@@ -303,7 +344,22 @@ def montar(carpeta, guion, duraciones, salida="episodio.mp4", colores=None):
     vig = np.clip(1 - 0.5 * np.clip(r - 0.55, 0, 1) ** 1.4, 0, 1)[..., None].astype(np.float32)
     grano = [np.random.normal(0, 4, (H, W, 1)).astype(np.float32) for _ in range(6)]
 
+    rutas_clip = cargar_clips(carpeta, planos)
+    cache_clip = {}
+
+    def clip_de(pid):
+        if pid not in rutas_clip:
+            return None
+        if pid not in cache_clip:
+            for viejo in [k for k in cache_clip if abs(k - pid) > 1]:
+                del cache_clip[viejo]  # solo en memoria los planos cercanos
+            cache_clip[pid] = Clip(rutas_clip[pid])
+        return cache_clip[pid]
+
     def frame_plano(p, t):
+        cl = clip_de(p["id"])
+        if cl is not None:
+            return cl.frame(t - p["ini"], p["dur"] + XF)
         c = CAMARAS.get(p.get("camara", "acercar"), CAMARAS["acercar"])
         fx, fy = p.get("foco", [0.5, 0.5])
         # la cámara sigue moviéndose durante el fundido de salida (no se congela)

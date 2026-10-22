@@ -6,3 +6,4 @@ scipy
 pillow
 onnxruntime
 opencv-python-headless
+kaggle

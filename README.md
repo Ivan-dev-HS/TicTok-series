@@ -8,6 +8,7 @@ Trabajadores IA que inventan, escriben, ilustran, ponen voz y montan miniseries 
 | Guionista | `trabajadores/guionista.py` | Gemini (texto) |
 | Diseñadora de personajes e ilustrador | `trabajadores/ilustrador.py` | Gemini (imagen) |
 | Actores de voz | `trabajadores/voces.py` | Gemini TTS · respaldo Kokoro |
+| Animador | `trabajadores/animador.py` + `animador/kaggle_animar.py` | LTX-Video en GPU gratuita de Kaggle |
 | Montador | `trabajadores/montador.py` | cámara 3D con profundidad, boca anime, subtítulos karaoke |
 
 ## Cómo se usa (pestaña **Actions → Estudio → Run workflow**)
@@ -18,4 +19,4 @@ Trabajadores IA que inventan, escriben, ilustran, ponen voz y montan miniseries 
 
 El vídeo de cada episodio aparece como **artefacto** en la ejecución (30 días).
 
-Necesita el secreto `GEMINI_API_KEY` en *Settings → Secrets and variables → Actions*.
+Necesita los secretos `GEMINI_API_KEY`, `KAGGLE_USERNAME` y `KAGGLE_KEY` en *Settings → Secrets and variables → Actions*. Sin los de Kaggle, todo funciona igual pero con cámara 3D en vez de animación.
