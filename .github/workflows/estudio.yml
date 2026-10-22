@@ -1,0 +1,85 @@
+name: Estudio
+
+on:
+  schedule:
+    - cron: "17 5 * * *"   # cada día a las 07:17 (hora de España en verano)
+  workflow_dispatch:
+    inputs:
+      accion:
+        description: "Qué hacer"
+        type: choice
+        options: [diario, nueva-serie, aprobar, rechazar, demo]
+        default: diario
+      serie:
+        description: "Id de la serie (para aprobar/rechazar), p. ej. el-farol-azul"
+        required: false
+      idea:
+        description: "Tu idea para una serie nueva (opcional)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: estudio
+  cancel-in-progress: false
+
+jobs:
+  producir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Fuentes y ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+
+      - name: Modelos (caché)
+        uses: actions/cache@v4
+        with:
+          path: |
+            modelos/*.onnx
+            modelos/*.bin
+          key: modelos-v1
+
+      - name: Instalar
+        run: |
+          pip install -q -r requirements.txt
+          bash modelos/descargar.sh
+
+      - name: Trabajar
+        id: trabajo
+        run: |
+          case "${{ inputs.accion || 'diario' }}" in
+            diario)      python cerebro.py ;;
+            nueva-serie) python cerebro.py nueva-serie "${{ inputs.idea }}" ;;
+            aprobar)     python cerebro.py aprobar "${{ inputs.serie }}" ;;
+            rechazar)    python cerebro.py rechazar "${{ inputs.serie }}" ;;
+            demo)        python montar_episodio.py demo
+                         echo "video=demo/episodio.mp4" >> "$GITHUB_OUTPUT"
+                         echo "nombre=demo" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Subir el vídeo para revisión
+        if: steps.trabajo.outputs.video
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.trabajo.outputs.nombre }}
+          path: ${{ steps.trabajo.outputs.video }}
+          retention-days: 30
+
+      - name: Guardar el progreso
+        if: always()
+        run: |
+          git config user.name "estudio-bot"
+          git config user.email "estudio-bot@users.noreply.github.com"
+          git add -A series 2>/dev/null || true
+          git diff --cached --quiet || (git commit -q -m "estudio: ${{ inputs.accion || 'diario' }}" && git push -q)

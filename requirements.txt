@@ -1,0 +1,8 @@
+google-genai
+kokoro-onnx
+soundfile
+numpy
+scipy
+pillow
+onnxruntime
+opencv-python-headless

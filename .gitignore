@@ -1,0 +1,11 @@
+__pycache__/
+modelos/*.onnx
+modelos/*.bin
+*.npy
+_video.mp4
+_audio.wav
+series/*/ep_*/img/
+series/*/ep_*/audio/
+series/*/ep_*/*.mp4
+demo/audio/
+demo/*.mp4
