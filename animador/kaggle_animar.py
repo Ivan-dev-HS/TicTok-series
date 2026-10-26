@@ -1,6 +1,17 @@
 # Se ejecuta DENTRO de Kaggle (GPU gratuita). Lo sube y lanza trabajadores/animador.py.
 # Lee trabajo.json + imágenes del dataset adjunto y genera un clip por plano con LTX-Video.
-import glob, json, os, subprocess, sys, time
+import glob, json, os, socket, subprocess, sys, time
+
+# Comprobaciones previas con mensajes claros
+try:
+    socket.gethostbyname("pypi.org"); internet = True
+except OSError:
+    internet = False
+gpu = subprocess.run(["nvidia-smi", "-L"], capture_output=True, text=True).stdout.strip() if os.path.exists("/usr/bin/nvidia-smi") else ""
+print(f"INTERNET={internet} GPU={gpu or 'ninguna'}", flush=True)
+if not internet or not gpu:
+    raise SystemExit("FALTA " + ("INTERNET " if not internet else "") + ("GPU " if not gpu else "")
+                     + "en Kaggle: verifica tu teléfono en kaggle.com/settings y revisa la cuota semanal de GPU")
 
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-U", "diffusers>=0.32", "transformers", "accelerate",
                 "sentencepiece", "imageio", "imageio-ffmpeg"], check=True)

@@ -82,10 +82,15 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     kid = f"{usuario}/estudio-animador"
     json.dump({"id": kid, "title": "estudio-animador", "code_file": "kaggle_animar.py", "language": "python",
                "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": True,
+               "machine_shape": os.environ.get("KAGGLE_GPU", "NvidiaTeslaT4"),
                "dataset_sources": [ds_id], "competition_sources": [], "kernel_sources": []},
               open(os.path.join(kn, "kernel-metadata.json"), "w"))
+    cuota = _k("quota", check=False).strip()
+    print("::notice title=Cuota GPU Kaggle::" + cuota.replace("\n", "%0A")[:800])
     try:
-        print(_k("kernels", "push", "-p", kn))
+        r = _k("kernels", "push", "-p", kn, "--accelerator", os.environ.get("KAGGLE_GPU", "NvidiaTeslaT4"))
+        print(r)
+        print("::notice title=Envío a Kaggle::" + r.strip().replace("\n", "%0A")[:800])
     except RuntimeError as e:
         print(f"::warning title=Animador::No se pudo lanzar en Kaggle, se usa la cámara 3D. {str(e)[:400]}")
         return 0
