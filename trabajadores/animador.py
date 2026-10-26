@@ -16,13 +16,18 @@ def _k(*args, check=True):
 
 
 def disponible():
-    return bool(os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY"))
+    for v in ("KAGGLE_USERNAME", "KAGGLE_KEY", "KAGGLE_API_TOKEN"):
+        if v in os.environ:
+            os.environ[v] = os.environ[v].strip().strip('"')  # por si se pegó con comillas o espacios
+            if not os.environ[v]:
+                del os.environ[v]
+    return bool(os.environ.get("KAGGLE_USERNAME") and (os.environ.get("KAGGLE_KEY") or os.environ.get("KAGGLE_API_TOKEN")))
 
 
 def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     """Genera carpeta/clips/plano_XX.mp4 para los planos con 'movimiento'. Devuelve nº de clips."""
     if not disponible():
-        print("::warning title=Animador::Sin secretos KAGGLE_USERNAME/KAGGLE_KEY, se usa la cámara 3D")
+        print("::warning title=Animador::Faltan los secretos KAGGLE_USERNAME y KAGGLE_API_TOKEN, se usa la cámara 3D")
         return 0
     usuario = os.environ["KAGGLE_USERNAME"]
     planos = [p for p in guion["planos"] if p.get("movimiento") and p.get("animar", True)]
