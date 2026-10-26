@@ -100,5 +100,5 @@ jobs:
         run: |
           git config user.name "estudio-bot"
           git config user.email "estudio-bot@users.noreply.github.com"
-          git add -A series videos 2>/dev/null || true
+          for d in series videos; do [ -e "$d" ] && git add -A "$d"; done; true
           git diff --cached --quiet || (git commit -q -m "estudio: ${{ inputs.accion || 'diario' }}" && git push -q)
