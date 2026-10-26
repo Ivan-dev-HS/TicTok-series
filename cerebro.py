@@ -67,7 +67,7 @@ def cambiar_estado(sid, estado):
     print(f"{b['serie']} → {estado}")
 
 
-if __name__ == "__main__":
+def main():
     accion = sys.argv[1] if len(sys.argv) > 1 else "diario"
     if accion == "diario":
         turno_diario()
@@ -77,3 +77,8 @@ if __name__ == "__main__":
         cambiar_estado(sys.argv[2], "rechazada")
     elif accion == "nueva-serie":
         producir.nueva_serie(sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else None)
+
+
+if __name__ == "__main__":
+    from trabajadores.avisos import ejecutar
+    ejecutar(main)
