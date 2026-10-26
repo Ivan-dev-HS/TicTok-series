@@ -15,7 +15,26 @@ from . import profundidad
 
 W, H, FPS = 1080, 1920, 30
 SR = 44100
-FONT = os.environ.get("FUENTE", "/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc")
+def _buscar_fuente():
+    """Busca una fuente gruesa con acentos; prueba varias rutas porque cambian según el sistema."""
+    import glob as _g
+    if os.environ.get("FUENTE") and os.path.exists(os.environ["FUENTE"]):
+        return os.environ["FUENTE"]
+    for patron in ("NotoSansCJK-Black.ttc", "NotoSansCJK-Bold.ttc", "NotoSansCJKjp-Bold.otf", "NotoSans-Black.ttf",
+                   "NotoSans-Bold.ttf", "DejaVuSans-Bold.ttf"):
+        r = _g.glob(f"/usr/share/fonts/**/{patron}", recursive=True)
+        if r:
+            return r[0]
+    try:
+        r = subprocess.run(["fc-match", "-f", "%{file}", "sans:bold"], capture_output=True, text=True).stdout.strip()
+        if r and os.path.exists(r):
+            return r
+    except Exception:
+        pass
+    raise RuntimeError("No hay ninguna fuente instalada para los subtítulos")
+
+
+FONT = _buscar_fuente()
 XF = 0.6             # duración del fundido entre planos
 PAUSA_INICIO = 0.35
 PAUSA_LINEAS = 0.3
