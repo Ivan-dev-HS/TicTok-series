@@ -22,7 +22,7 @@ def disponible():
 def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     """Genera carpeta/clips/plano_XX.mp4 para los planos con 'movimiento'. Devuelve nº de clips."""
     if not disponible():
-        print("Animador: sin credenciales de Kaggle, se usa la cámara 3D")
+        print("::warning title=Animador::Sin secretos KAGGLE_USERNAME/KAGGLE_KEY, se usa la cámara 3D")
         return 0
     usuario = os.environ["KAGGLE_USERNAME"]
     planos = [p for p in guion["planos"] if p.get("movimiento") and p.get("animar", True)]
@@ -45,9 +45,13 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     json.dump({"title": "estudio-trabajo", "id": ds_id, "licenses": [{"name": "CC0-1.0"}]},
               open(os.path.join(ds, "dataset-metadata.json"), "w"))
     try:
-        _k("datasets", "version", "-p", ds, "-m", f"ep {guion.get('episodio')}", "--dir-mode", "zip")
-    except RuntimeError:
-        _k("datasets", "create", "-p", ds, "--dir-mode", "zip")
+        try:
+            _k("datasets", "version", "-p", ds, "-m", f"ep {guion.get('episodio')}", "--dir-mode", "zip")
+        except RuntimeError:
+            _k("datasets", "create", "-p", ds, "--dir-mode", "zip")
+    except RuntimeError as e:
+        print(f"::warning title=Animador::No se pudieron subir las imágenes a Kaggle, se usa la cámara 3D. {str(e)[:400]}")
+        return 0
     for _ in range(60):  # esperar a que Kaggle procese el dataset
         if "ready" in _k("datasets", "status", ds_id, check=False).lower():
             break
@@ -59,7 +63,11 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
                "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": True,
                "dataset_sources": [ds_id], "competition_sources": [], "kernel_sources": []},
               open(os.path.join(kn, "kernel-metadata.json"), "w"))
-    print(_k("kernels", "push", "-p", kn))
+    try:
+        print(_k("kernels", "push", "-p", kn))
+    except RuntimeError as e:
+        print(f"::warning title=Animador::No se pudo lanzar en Kaggle, se usa la cámara 3D. {str(e)[:400]}")
+        return 0
     print(f"Animador: {len(planos)} planos enviados a la GPU de Kaggle…")
 
     inicio = time.time()
@@ -77,7 +85,8 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
         shutil.move(f, os.path.join(destino, os.path.basename(f)))
     reg = glob.glob(os.path.join(out, "**", "registro.json"), recursive=True)
     if reg:
-        print("Registro de Kaggle:", open(reg[0]).read())
+        txt = open(reg[0]).read(); print("Registro de Kaggle:", txt)
+        print("::notice title=Registro Kaggle::" + txt.replace("\n", " ")[:1500])
     n = len(glob.glob(os.path.join(destino, "*.mp4")))
-    print(f"Animador: {n} clips listos ({estado.strip()[-40:]})")
+    print(f"::notice title=Animador::{n} clips animados de {len(planos)} planos. Kaggle: {estado.strip()[-80:]}")
     return n

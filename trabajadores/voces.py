@@ -65,7 +65,7 @@ def generar_lineas(guion, reparto, carpeta):
                     try:
                         audio, sr = _gemini_tts(linea["texto"], cfg.get("gemini", "Kore"), direccion)
                     except Exception as e:
-                        print(f"Gemini TTS falló ({e}); uso Kokoro")
+                        print(f"::warning title=Voz::Gemini TTS falló, uso Kokoro. {str(e)[:300]}")
                 if audio is None:
                     audio, sr = _kokoro_tts(linea["texto"], cfg.get("kokoro", "ef_dora"), cfg.get("velocidad", 1.0))
                 sf.write(ruta, _recortar_silencios(np.asarray(audio, np.float32), sr), sr)
