@@ -85,10 +85,20 @@ jobs:
           path: ${{ steps.trabajo.outputs.video }}
           retention-days: 30
 
+      - name: Copiar el vídeo a la carpeta videos
+        if: steps.trabajo.outputs.video
+        run: |
+          mkdir -p videos
+          if [ -d "${{ steps.trabajo.outputs.video }}" ]; then
+            i=1; for f in "${{ steps.trabajo.outputs.video }}"/*.mp4; do cp "$f" "videos/${{ steps.trabajo.outputs.nombre }}-$i.mp4"; i=$((i+1)); done
+          else
+            cp "${{ steps.trabajo.outputs.video }}" "videos/${{ steps.trabajo.outputs.nombre }}.mp4"
+          fi
+
       - name: Guardar el progreso
         if: always()
         run: |
           git config user.name "estudio-bot"
           git config user.email "estudio-bot@users.noreply.github.com"
-          git add -A series 2>/dev/null || true
+          git add -A series videos 2>/dev/null || true
           git diff --cached --quiet || (git commit -q -m "estudio: ${{ inputs.accion || 'diario' }}" && git push -q)
