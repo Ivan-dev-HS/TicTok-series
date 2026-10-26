@@ -8,7 +8,7 @@ on:
       accion:
         description: "Qué hacer"
         type: choice
-        options: [diario, nueva-serie, aprobar, rechazar, demo]
+        options: [diario, nueva-serie, aprobar, rechazar, demo, probar-kaggle]
         default: diario
       serie:
         description: "Id de la serie (para aprobar/rechazar), p. ej. el-farol-azul"
@@ -69,6 +69,8 @@ jobs:
             demo)        python montar_episodio.py demo --animar
                          echo "video=demo/episodio.mp4" >> "$GITHUB_OUTPUT"
                          echo "nombre=demo" >> "$GITHUB_OUTPUT" ;;
+            probar-kaggle) ANIMAR_MAX_PLANOS=1 ANIMAR_FRAMES=49 ANIMAR_PASOS=20 python -c "import json; from trabajadores import animador, avisos; avisos.ejecutar(lambda: animador.animar('demo', json.load(open('demo/guion.json')), max_minutos=40, espera_max_min=60), necesita_gemini=False)"
+                         ls demo/clips/*.mp4 2>/dev/null && echo "video=demo/clips" >> "$GITHUB_OUTPUT" && echo "nombre=clip-kaggle" >> "$GITHUB_OUTPUT" || true ;;
           esac
 
       - name: Subir el vídeo para revisión

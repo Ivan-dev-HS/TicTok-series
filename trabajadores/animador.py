@@ -24,6 +24,19 @@ def disponible():
     return bool(os.environ.get("KAGGLE_USERNAME") and (os.environ.get("KAGGLE_KEY") or os.environ.get("KAGGLE_API_TOKEN")))
 
 
+def _log_kaggle(out):
+    """Últimas líneas del registro del cuaderno de Kaggle, para ver por qué falló."""
+    for f in glob.glob(os.path.join(out, "**", "*.log"), recursive=True):
+        txt = open(f, errors="ignore").read()
+        try:
+            lineas = "".join(e.get("data", "") for e in json.loads(txt)).splitlines()
+        except Exception:
+            lineas = txt.splitlines()
+        lineas = [l for l in lineas if l.strip()]
+        return "\n".join(lineas[-25:])
+    return "(sin registro)"
+
+
 def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     """Genera carpeta/clips/plano_XX.mp4 para los planos con 'movimiento'. Devuelve nº de clips."""
     if not disponible():
@@ -34,6 +47,8 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     destino = os.path.join(carpeta, "clips")
     hechos = {os.path.basename(f) for f in glob.glob(os.path.join(destino, "*.mp4"))}
     planos = [p for p in planos if f"plano_{p['id']:02d}.mp4" not in hechos]
+    if os.environ.get("ANIMAR_MAX_PLANOS"):
+        planos = planos[: int(os.environ["ANIMAR_MAX_PLANOS"])]
     if not planos:
         return len(hechos)
 
@@ -42,7 +57,8 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     os.makedirs(ds); os.makedirs(kn)
     for p in planos:
         shutil.copy(os.path.join(carpeta, "img", f"plano_{p['id']:02d}.png"), ds)
-    json.dump({"max_minutos": max_minutos,
+    json.dump({"max_minutos": max_minutos, "frames": int(os.environ.get("ANIMAR_FRAMES", 97)),
+               "pasos": int(os.environ.get("ANIMAR_PASOS", 30)),
                "planos": [{"id": p["id"], "imagen": f"plano_{p['id']:02d}.png", "movimiento": p["movimiento"],
                            "escena": p.get("prompt_imagen", "")[:300]} for p in planos]},
               open(os.path.join(ds, "trabajo.json"), "w"))
@@ -81,6 +97,9 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
         time.sleep(60)
         estado = _k("kernels", "status", kid, check=False).lower()
         print(f"  [{(time.time() - inicio) / 60:.0f} min] {estado.strip()[-60:]}")
+        if "running" in estado and "_corriendo" not in locals():
+            _corriendo = True
+            print(f"::notice title=Kaggle::Empezó a ejecutarse a los {(time.time() - inicio) / 60:.0f} min de enviarlo")
         if any(s in estado for s in ("complete", "error", "cancel")):
             break
     out = os.path.join(tmp, "out")
@@ -93,5 +112,9 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
         txt = open(reg[0]).read(); print("Registro de Kaggle:", txt)
         print("::notice title=Registro Kaggle::" + txt.replace("\n", " ")[:1500])
     n = len(glob.glob(os.path.join(destino, "*.mp4")))
+    if "error" in estado or n == 0:
+        log = _log_kaggle(out)
+        print("Log de Kaggle:\n" + log)
+        print("::warning title=Log Kaggle::" + log.replace("%", "%25").replace("\n", "%0A")[:3500])
     print(f"::notice title=Animador::{n} clips animados de {len(planos)} planos. Kaggle: {estado.strip()[-80:]}")
     return n
