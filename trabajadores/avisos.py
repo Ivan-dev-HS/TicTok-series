@@ -6,8 +6,8 @@ def _gh(texto):
     return texto.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
 
 
-def ejecutar(fn):
-    if "GEMINI_API_KEY" not in os.environ or not os.environ["GEMINI_API_KEY"]:
+def ejecutar(fn, necesita_gemini=True):
+    if necesita_gemini and ("GEMINI_API_KEY" not in os.environ or not os.environ["GEMINI_API_KEY"]):
         print("::error title=Falta la clave de Gemini::Añade el secreto GEMINI_API_KEY en Settings → Secrets and variables → Actions")
         sys.exit(1)
     try:

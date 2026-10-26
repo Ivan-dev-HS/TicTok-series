@@ -19,4 +19,4 @@ def main():
     print(f"listo: {final} ({total:.1f}s) en {time.time()-t0:.0f}s")
 
 
-ejecutar(main)
+ejecutar(main, necesita_gemini=False)
