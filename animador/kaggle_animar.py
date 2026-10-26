@@ -7,11 +7,22 @@ try:
     socket.gethostbyname("pypi.org"); internet = True
 except OSError:
     internet = False
-gpu = subprocess.run(["nvidia-smi", "-L"], capture_output=True, text=True).stdout.strip() if os.path.exists("/usr/bin/nvidia-smi") else ""
-print(f"INTERNET={internet} GPU={gpu or 'ninguna'}", flush=True)
+import shutil
+smi = shutil.which("nvidia-smi") or next((c for c in ("/usr/bin/nvidia-smi", "/usr/local/nvidia/bin/nvidia-smi") if os.path.exists(c)), None)
+gpu = subprocess.run([smi, "-L"], capture_output=True, text=True).stdout.strip() if smi else ""
+devs = sorted(glob.glob("/dev/nvidia*"))
+try:
+    import torch as _t
+    tinfo = f"torch {_t.__version__} cuda={_t.version.cuda} disponible={_t.cuda.is_available()}"
+    if not gpu and _t.cuda.is_available():
+        gpu = _t.cuda.get_device_name(0)
+except Exception as e:
+    tinfo = f"torch: {e}"
+print(f"INTERNET={internet} GPU={gpu or 'ninguna'} | smi={smi} | dev={devs} | {tinfo} | "
+      f"KAGGLE_KERNEL_RUN_TYPE={os.environ.get('KAGGLE_KERNEL_RUN_TYPE')} ACC={os.environ.get('KAGGLE_GPU_TYPE') or os.environ.get('ACCELERATOR_TYPE')}", flush=True)
 if not internet or not gpu:
     raise SystemExit("FALTA " + ("INTERNET " if not internet else "") + ("GPU " if not gpu else "")
-                     + "en Kaggle: verifica tu teléfono en kaggle.com/settings y revisa la cuota semanal de GPU")
+                     + "en Kaggle")
 
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-U", "diffusers>=0.32", "transformers", "accelerate",
                 "sentencepiece", "imageio", "imageio-ffmpeg"], check=True)
