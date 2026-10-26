@@ -125,17 +125,14 @@ class Clip:
 
     def frame(self, t_local, dur_plano):
         # velocidad ajustada (0.75x–1.15x); si el plano es más largo, va y vuelve (ping-pong) suavemente
-        vel = min(max(self.dur / dur_plano, 0.75), 1.15)
-        tc = t_local * vel
-        ciclo = 2 * self.dur
-        tc = tc % ciclo
-        if tc > self.dur:
-            tc = ciclo - tc
+        # se ralentiza hasta 0.6x para cubrir el plano; si aún sobra, se queda en el último fotograma
+        vel = min(max(self.dur / dur_plano, 0.6), 1.15)
+        tc = min(t_local * vel, self.dur)
         pos = min(max(tc * self.fps, 0), len(self.frames) - 1.001)
         i = int(pos); a = pos - i
         f = self.frames[i].astype(np.float32) * (1 - a) + self.frames[min(i + 1, len(self.frames) - 1)].astype(np.float32) * a
         # zoom muy lento para que siempre haya vida, y reescalado a 1080x1920 con nitidez
-        z = 1.0 + 0.05 * min(t_local / max(dur_plano, 1), 1)
+        z = 1.0 + 0.08 * min(t_local / max(dur_plano, 1), 1)
         h, w = f.shape[:2]
         ch = min(h, w * H / W) / z; cw = ch * W / H
         x0, y0 = (w - cw) / 2, (h - ch) / 2

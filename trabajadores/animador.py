@@ -57,7 +57,7 @@ def animar(carpeta, guion, max_minutos=150, espera_max_min=240):
     os.makedirs(ds); os.makedirs(kn)
     for p in planos:
         shutil.copy(os.path.join(carpeta, "img", f"plano_{p['id']:02d}.png"), ds)
-    json.dump({"max_minutos": max_minutos, "frames": int(os.environ.get("ANIMAR_FRAMES", 97)),
+    json.dump({"max_minutos": max_minutos, "frames": int(os.environ.get("ANIMAR_FRAMES", 73)),
                "pasos": int(os.environ.get("ANIMAR_PASOS", 30)),
                "planos": [{"id": p["id"], "imagen": f"plano_{p['id']:02d}.png", "movimiento": p["movimiento"],
                            "escena": p.get("prompt_imagen", "")[:300]} for p in planos]},

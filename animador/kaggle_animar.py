@@ -1,6 +1,7 @@
 # Se ejecuta DENTRO de Kaggle (GPU gratuita). Lo sube y lanza trabajadores/animador.py.
 # Lee trabajo.json + imágenes del dataset adjunto y genera un clip por plano con LTX-Video.
 import glob, json, os, socket, subprocess, sys, time
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 # Comprobaciones previas con mensajes claros
 try:
@@ -64,15 +65,23 @@ for p in job["planos"]:
     img = img.resize((W, H), Image.LANCZOS)
     prompt = (f"{p['movimiento']}. Anime style, high quality 2D animation, smooth natural motion, "
               f"consistent character, cinematic lighting. {p.get('escena', '')}")
-    try:
-        frames = pipe(image=img, prompt=prompt, negative_prompt=NEG, width=W, height=H,
-                      num_frames=job.get("frames", 97), num_inference_steps=job.get("pasos", 30),
-                      guidance_scale=3.0, decode_timestep=0.05, decode_noise_scale=0.025,
-                      generator=torch.Generator("cpu").manual_seed(p["id"])).frames[0]
-        export_to_video(frames, os.path.join(salida, f"plano_{p['id']:02d}.mp4"), fps=24)
-        estado = "ok"
-    except Exception as e:
-        estado = f"error: {e}"
+    estado = "sin intentar"
+    # si no cabe en memoria, prueba con clips más cortos (el montador los alarga)
+    for nf in [f for f in (job.get("frames", 73), 61, 49) if f <= job.get("frames", 73)]:
+        try:
+            frames = pipe(image=img, prompt=prompt, negative_prompt=NEG, width=W, height=H,
+                          num_frames=nf, num_inference_steps=job.get("pasos", 30),
+                          guidance_scale=3.0, decode_timestep=0.05, decode_noise_scale=0.025,
+                          generator=torch.Generator("cpu").manual_seed(p["id"])).frames[0]
+            export_to_video(frames, os.path.join(salida, f"plano_{p['id']:02d}.mp4"), fps=24)
+            estado = f"ok ({nf} frames)"
+            break
+        except torch.cuda.OutOfMemoryError:
+            estado = f"sin memoria con {nf} frames"
+            torch.cuda.empty_cache()
+        except Exception as e:
+            estado = f"error: {str(e)[:200]}"
+            break
     seg = time.time() - ini
     registro.append({"id": p["id"], "estado": estado, "segundos": round(seg)})
     print(f"plano {p['id']}: {estado} ({seg:.0f}s)", flush=True)
